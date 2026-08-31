@@ -1,0 +1,70 @@
+# GitLab CI — fixture pipeline (no live Replicate / Telegram / indexer tokens).
+# Weekly schedule should set WEEKLY_DRY_RUN=1 and call `week --dry-run`.
+
+stages: [test, schedule]
+
+variables:
+  CARGO_HOME: ${CI_PROJECT_DIR}/.cargo
+  RUSTFLAGS: "-D warnings"
+
+.test-rust: &test-rust
+  stage: test
+  image: rust:1.86-bookworm
+  cache:
+    key: cargo-cl8y-research
+    paths:
+      - .cargo/
+      - target/
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+fmt:
+  <<: *test-rust
+  script:
+    - rustup component add rustfmt
+    - cargo fmt --all -- --check
+
+clippy:
+  <<: *test-rust
+  script:
+    - rustup component add clippy
+    - cargo clippy --all-targets -- -D warnings
+
+test:
+  <<: *test-rust
+  script:
+    - cargo test --all-targets
+    - cargo test --all-targets
+    - cargo run --quiet -- week --fixtures fixtures/happy-week --out runs/ci-happy --skip-image
+    - test -f runs/ci-happy/plan.json
+    - test -f runs/ci-happy/outline.md
+    - test -f runs/ci-happy/post.mdx
+    - test -f runs/ci-happy/report.md
+    - test -f runs/ci-happy/passes/grammar.md
+    - "! grep -q wordCount runs/ci-happy/post.mdx"
+
+postgres:
+  <<: *test-rust
+  services:
+    - name: pgvector/pgvector:pg16
+      alias: postgres
+  variables:
+    POSTGRES_USER: cl8y
+    POSTGRES_PASSWORD: cl8y
+    POSTGRES_DB: cl8y_research_test
+    DATABASE_URL: postgres://cl8y:cl8y@postgres:5432/cl8y_research_test
+  script:
+    - cargo test --features postgres --all-targets
+    - cargo test --features postgres --all-targets -- --ignored
+
+weekly-dry-run:
+  <<: *test-rust
+  stage: schedule
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  script:
+    - cargo run --quiet -- week --fixtures fixtures/happy-week --out runs/scheduled --dry-run
+    - test -f runs/scheduled/plan.json
+    - test -f runs/scheduled/report.md
+    - test ! -f runs/scheduled/post.mdx

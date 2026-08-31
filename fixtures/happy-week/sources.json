@@ -1,0 +1,39 @@
+{
+  "repos": [
+    {
+      "remote": "github.com/PlasticDigits/yieldomega",
+      "events": ["merged MR: document hybrid volume reconciliation"]
+    },
+    {
+      "remote": "github.com/PlasticDigits/cl8y-dex-terraclassic",
+      "events": ["merged MR: indexer overview 24h USD"]
+    }
+  ],
+  "dex_overview": {
+    "total_volume_24h_usd": "12000"
+  },
+  "telegram": [
+    {
+      "room": "ceramicliberty",
+      "message_id": "1001",
+      "from": "PlasticDigits",
+      "text": "@PlasticDigits fee tiers remain on the DEX product page",
+      "is_team": true
+    },
+    {
+      "room": "plasticann",
+      "message_id": "1002",
+      "from": "visitor",
+      "text": "@randomuser bought the dip with 0x2222222222222222222222222222222222222222",
+      "is_team": false
+    }
+  ],
+  "recent_posts": [
+    {
+      "slug": "cl8y-roadmap-cmm-bridge-yieldomega",
+      "title": "The Updated CL8Y Roadmap for CMM Treasury, Bridge Liquidity, YieldOmega, and UST1",
+      "tags": ["cl8y", "roadmap", "ust1", "ustr", "yieldomega", "terraclassic"],
+      "opening": "CL8Y has grown into a set of connected infrastructure for moving value, attention, and liquidity across chains."
+    }
+  ]
+}
