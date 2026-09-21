@@ -1,6 +1,6 @@
 # ADR 0001: Remove catch-all CODEOWNERS
 
-Status: **Proposed** — [#17](https://git.cl8y.com/code/cl8y-research/issues/17).
+Status: **Accepted** — [#17](https://git.cl8y.com/code/cl8y-research/issues/17) slice 1 landed on `main` (`12342ba`); slices 2–3 in follow-up PR `issue/17`.
 Keywords in that issue are not architecture approval. Ordinary design is not
 a founder card. This ADR does not authorize deploy, spend, custody rotation,
 or Forgejo protection PATCH
@@ -55,8 +55,9 @@ does **not** treat the GET as implement write permission.
 
 ## Context
 
-`main` currently has a root [`CODEOWNERS`](../../CODEOWNERS) (commit
-`291674f`) whose only rule is Forgejo Go-regexp `.* @code/maintainers`.
+`main` had a root [`CODEOWNERS`](../../CODEOWNERS) (commit
+`291674f`, removed in [`#17`](https://git.cl8y.com/code/cl8y-research/pulls/17)
+`12342ba`) whose only rule was Forgejo Go-regexp `.* @code/maintainers`.
 Forgejo plants official review requests from that file. With a one-person
 maintainers team the PR author cannot approve their own pull (405 official
 review / 422 self-approve). CAC autoland/drain then skip
@@ -70,16 +71,10 @@ of catch-all CODEOWNERS **via PR**. Protection for this repo already
 matches the forge contract (attestation above). Leaving the file still
 plants requests on new PRs.
 
-This repository's occupying work is pull
+This repository's occupying work was pull
 [`#17`](https://git.cl8y.com/code/cl8y-research/pulls/17)
-(`chore/remove-catchall-codeowners`). Issue `#17` **is** pull `#17`
-(`html_url` → `/pulls/17`). Live named-branch tip is `e683015` (same as
-`main`; PR reports `changed_files: 0`). Historical delete commit
-`89bedca` (“Remove catch-all CODEOWNERS (not a merge gate).”) is a
-fast-forward of that branch (parent `e683015`), still reachable as
-`refs/pull/17/head`. Woodpecker `ci/woodpecker/pr/woodpecker` succeeded on
-`89bedca` (2026-09-21T07:49:06Z, pipeline 5). Merging the empty
-named-branch tip does **not** achieve Outcome 1.
+(`chore/remove-catchall-codeowners`), merged `12342ba` (delete-only). Follow-up
+PR head `issue/17` adds this ADR, merge-plane docs, and Woodpecker slice 3.
 
 Occupying leftover plant is live on `#17` and on `#16`: Reviews API team
 `maintainers`, `official: true`, `REQUEST_REVIEW`, not dismissed. Drain

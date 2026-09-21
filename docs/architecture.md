@@ -45,7 +45,7 @@ Protected `main` is the only release branch. The merge contract is:
 | Gate | Contract |
 | --- | --- |
 | Direct push | Off (`enable_push: false`) |
-| Status check | `ci/woodpecker/pr/woodpecker` required (root `.woodpecker.yml`: `cargo`) |
+| Status check | `ci/woodpecker/pr/woodpecker` required (root `.woodpecker.yml`: `cargo`, `no-catchall-codeowners`) |
 | Official CODEOWNERS review | Not a merge gate. No file at `CODEOWNERS`, `docs/CODEOWNERS`, or `.forgejo/CODEOWNERS`. |
 | `force_merge` | Forbidden |
 | Approvals | `required_approvals: 0`; rejected reviews still block |
@@ -61,10 +61,9 @@ This product tree does not PATCH Forgejo protection and does not edit CAC.
 Worker product invariants stay in [`invariants.md`](invariants.md). Branch
 protection is operator-owned. Product PRs must not reintroduce
 `CODEOWNERS`, `docs/CODEOWNERS`, or `.forgejo/CODEOWNERS` (Forgejo lookup
-paths; Go-regexp, not GitHub globs). Land vehicle for ADR 0001 is occupying
-pull `#17`; `cac-design-issue-17` is design transport only (do not merge it
-to `main`). The named branch is empty vs `main` until implement restores
-delete commit `89bedca`.
+paths; Go-regexp, not GitHub globs). Catch-all removal landed in
+[`#17`](https://git.cl8y.com/code/cl8y-research/pulls/17); Woodpecker
+`no-catchall-codeowners` fails closed if those paths reappear.
 
 Spend, Coolify, custody, and CL8Y-web publish remain out of this merge-plane
 section
