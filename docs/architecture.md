@@ -1,5 +1,8 @@
 # Architecture
 
+Worker pipeline (product) is below. Merge and review gate:
+[ADR 0001](adr/0001-remove-catchall-codeowners.md).
+
 ```
 allowlisted remotes / indexer hosts / Telegram rooms
         │
@@ -34,3 +37,34 @@ Modules:
 | `publish` | Draft MR payload that cannot auto-merge |
 
 Live HTTP never follows redirects and never fetches user-controlled URLs.
+
+## Merge plane
+
+Protected `main` is the only release branch. The merge contract is:
+
+| Gate | Contract |
+| --- | --- |
+| Direct push | Off (`enable_push: false`) |
+| Status check | `ci/woodpecker/pr/woodpecker` required (root `.woodpecker.yml`: `cargo`, `no-catchall-codeowners`) |
+| Official CODEOWNERS review | Not a merge gate. No file at `CODEOWNERS`, `docs/CODEOWNERS`, or `.forgejo/CODEOWNERS`. |
+| `force_merge` | Forbidden |
+| Approvals | `required_approvals: 0`; rejected reviews still block |
+
+Catch-all CODEOWNERS removal: [ADR 0001](adr/0001-remove-catchall-codeowners.md)
+([#17](https://git.cl8y.com/code/cl8y-research/issues/17)). Forge policy that
+keeps push/status protection and drops official-review block is
+[cl8y-forgejo#48](https://git.cl8y.com/PlasticDigits/cl8y-forgejo/issues/48)
+and
+[cl8y-forgejo `docs/INVARIANTS.md`](https://git.cl8y.com/PlasticDigits/cl8y-forgejo/src/branch/main/docs/INVARIANTS.md).
+This product tree does not PATCH Forgejo protection and does not edit CAC.
+
+Worker product invariants stay in [`invariants.md`](invariants.md). Branch
+protection is operator-owned. Product PRs must not reintroduce
+`CODEOWNERS`, `docs/CODEOWNERS`, or `.forgejo/CODEOWNERS` (Forgejo lookup
+paths; Go-regexp, not GitHub globs). Catch-all removal landed in
+[`#17`](https://git.cl8y.com/code/cl8y-research/pulls/17); Woodpecker
+`no-catchall-codeowners` fails closed if those paths reappear.
+
+Spend, Coolify, custody, and CL8Y-web publish remain out of this merge-plane
+section
+([agent-control #297](https://git.cl8y.com/PlasticDigits/cl8y-agent-control/issues/297)).
