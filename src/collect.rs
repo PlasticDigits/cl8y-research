@@ -50,6 +50,8 @@ pub struct FixtureBundle {
     /// If true, a collector is asked to fetch a blocked URL (SSRF test).
     #[serde(default)]
     pub ssrf_url: Option<String>,
+    #[serde(default)]
+    pub competitor_watch: Vec<crate::competitor_watch::FixtureCompetitorPage>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -302,6 +304,7 @@ mod tests {
             telegram: vec![],
             recent_posts: vec![],
             ssrf_url: None,
+            competitor_watch: vec![],
         };
         let c = collect_from_fixture(&cfg, &bundle, now).unwrap();
         assert!(c.gaps.iter().any(|g| g.contains("503")));
@@ -328,6 +331,7 @@ mod tests {
             telegram: vec![],
             recent_posts: vec![],
             ssrf_url: Some("http://169.254.169.254/latest/meta-data/".into()),
+            competitor_watch: vec![],
         };
         assert!(collect_from_fixture(&cfg, &bundle, now).is_err());
     }

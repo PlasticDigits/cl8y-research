@@ -29,6 +29,7 @@ Modules:
 | --- | --- |
 | `allowlist` | SSRF, href hosts, repo orgs, canonical addresses |
 | `collect` | Fixture + live GET of allowlisted JSON only |
+| `competitor_watch` | Allowlisted competitor pages → inbox notes (`watch` CLI) |
 | `replicate` | Create-once predictor, budget, untrusted wrap |
 | `pipeline` | Stage machine, diversity ranker, emit |
 | `lint` / `mdx` | Mechanical editor + blog contract |

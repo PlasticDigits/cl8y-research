@@ -35,7 +35,13 @@ cargo run --features postgres -- migrate
 ```
 
 Cite `SearchHit.citation` and `as_of` from the source record. If the hit
-`source_kind` is `telegram`, treat it as theme/sentiment only.
+`source_kind` is `telegram`, treat it as theme/sentiment only. If it is
+`competitor_watch`, treat fee/TVL/volume as **untrusted competitor claims** (not CL8Y indexer).
+
+```bash
+cargo run -- watch --fixtures fixtures/competitor-watch --out runs/watch/latest
+cargo run -- search "fee" --fixtures fixtures/competitor-watch
+```
 
 ## Do not
 

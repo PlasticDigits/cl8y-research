@@ -17,6 +17,7 @@ pub enum SourceKind {
     BridgeIndexer,
     Telegram,
     RecentPost,
+    CompetitorWatch,
 }
 
 impl SourceKind {
@@ -27,12 +28,26 @@ impl SourceKind {
             Self::BridgeIndexer => "bridge_indexer",
             Self::Telegram => "telegram",
             Self::RecentPost => "recent_post",
+            Self::CompetitorWatch => "competitor_watch",
         }
     }
 
-    /// Telegram is never an onchain source of truth.
+    /// Telegram and competitor pages are never onchain sources of truth.
     pub fn onchain_authoritative(self) -> bool {
         matches!(self, Self::DexIndexer | Self::BridgeIndexer | Self::Repo)
+    }
+}
+
+/// Postgres round-trip for `source_kind` text (cl8y-research#14).
+pub fn parse_stored_kind(s: &str) -> SourceKind {
+    match s {
+        "dex_indexer" => SourceKind::DexIndexer,
+        "bridge_indexer" => SourceKind::BridgeIndexer,
+        "telegram" => SourceKind::Telegram,
+        "recent_post" => SourceKind::RecentPost,
+        "competitor_watch" => SourceKind::CompetitorWatch,
+        "repo" => SourceKind::Repo,
+        _ => SourceKind::Repo,
     }
 }
 
@@ -274,19 +289,22 @@ pub mod postgres {
     }
 
     fn parse_kind(s: &str) -> SourceKind {
-        match s {
-            "dex_indexer" => SourceKind::DexIndexer,
-            "bridge_indexer" => SourceKind::BridgeIndexer,
-            "telegram" => SourceKind::Telegram,
-            "recent_post" => SourceKind::RecentPost,
-            _ => SourceKind::Repo,
-        }
+        parse_stored_kind(s)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn competitor_watch_kind_not_authoritative() {
+        assert!(!SourceKind::CompetitorWatch.onchain_authoritative());
+        assert_eq!(
+            parse_stored_kind("competitor_watch"),
+            SourceKind::CompetitorWatch
+        );
+    }
 
     #[test]
     fn search_finds_ingested_dex_volume() {
