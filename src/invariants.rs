@@ -108,6 +108,64 @@ pub const DEFAULT_REPOS: &[&str] = &[
 /// DEX overview path (documented in cl8y-dex-terraclassic indexer).
 pub const DEX_OVERVIEW_PATH: &str = "/api/v1/overview";
 
+/// Competitor fee/liquidity watch (cl8y-research#14). Exact HTTPS URLs only; no crawl.
+pub const COMPETITOR_WATCH_MAX_PAGES: usize = 16;
+pub const COMPETITOR_WATCH_BODY_CAP: usize = 512 * 1024;
+pub const COMPETITOR_WATCH_EXCERPT_CAP: usize = 4096;
+pub const COMPETITOR_WATCH_USER_AGENT: &str =
+    "cl8y-research competitor-watch (+https://cl8y.com; ops@cl8y.com)";
+
+/// Hosts that must never appear on the competitor page table (our dapps / indexer).
+pub const COMPETITOR_WATCH_FORBIDDEN_HOSTS: &[&str] = &[
+    "cl8y.com",
+    "www.cl8y.com",
+    "dex.cl8y.com",
+    "bridge.cl8y.com",
+    "ust1cmm.com",
+    "indexer.dex.cl8y.com",
+    "indexer.bridge.cl8y.com",
+];
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CompetitorPageFormat {
+    Json,
+    Html,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct CompetitorWatchPage {
+    pub id: &'static str,
+    pub url: &'static str,
+    pub format: CompetitorPageFormat,
+    pub extractor: &'static str,
+    pub accept: &'static str,
+}
+
+/// Public JSON protocol objects (DeFiLlama). Verified HTTP 200 before commit.
+pub const COMPETITOR_WATCH_PAGES: &[CompetitorWatchPage] = &[
+    CompetitorWatchPage {
+        id: "defillama-terraswap",
+        url: "https://api.llama.fi/protocol/terraswap",
+        format: CompetitorPageFormat::Json,
+        extractor: "defillama_protocol",
+        accept: "application/json",
+    },
+    CompetitorWatchPage {
+        id: "defillama-terraport",
+        url: "https://api.llama.fi/protocol/terraport",
+        format: CompetitorPageFormat::Json,
+        extractor: "defillama_protocol",
+        accept: "application/json",
+    },
+    CompetitorWatchPage {
+        id: "defillama-astroport-classic",
+        url: "https://api.llama.fi/protocol/astroport-classic",
+        format: CompetitorPageFormat::Json,
+        extractor: "defillama_protocol",
+        accept: "application/json",
+    },
+];
+
 /// Bridge indexer public HTTP API is not documented in cl8y-bridge-monorepo
 /// as of this worker. Collectors must skip the stat rather than invent an API.
 pub const BRIDGE_INDEXER_GAP: &str =
@@ -129,5 +187,15 @@ mod tests {
     fn hero_path_never_uses_src_blog_assets() {
         assert!(!HERO_PATH_TEMPLATE.contains("src/blog"));
         assert!(HERO_PATH_TEMPLATE.starts_with("/images/blog/"));
+    }
+
+    #[test]
+    fn competitor_watch_pages_within_cap() {
+        assert!(!COMPETITOR_WATCH_PAGES.is_empty());
+        assert!(COMPETITOR_WATCH_PAGES.len() <= COMPETITOR_WATCH_MAX_PAGES);
+        for p in COMPETITOR_WATCH_PAGES {
+            assert!(p.url.starts_with("https://"));
+            assert!(!p.id.is_empty());
+        }
     }
 }

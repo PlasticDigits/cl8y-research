@@ -390,7 +390,7 @@ fn description_from(body: &str, plan: &Plan) -> String {
 }
 
 fn all_claims(c: &Collection) -> Vec<NumericClaim> {
-    c.sources.iter().flat_map(|s| s.numbers.clone()).collect()
+    crate::competitor_watch::claims_for_week_emit(&c.sources)
 }
 
 fn write_json<T: Serialize>(path: &Path, v: &T) -> Result<()> {
@@ -511,6 +511,7 @@ mod tests {
                 opening: "CL8Y has grown into a set of connected infrastructure".into(),
             }],
             ssrf_url: None,
+            competitor_watch: vec![],
         }
     }
 

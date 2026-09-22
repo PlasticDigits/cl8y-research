@@ -1,11 +1,15 @@
 //! cl8y-research CLI.
 
 use cl8y_research::collect::load_fixture_bundle;
+use cl8y_research::competitor_watch::{
+    collect_competitor_watch_default, load_fixture_competitor_pages, load_watch_notes,
+    write_watch_artifacts,
+};
 use cl8y_research::config::Config;
-use cl8y_research::embed::HashingEmbedder;
-use cl8y_research::pipeline::{run_week, search_collection, WeekOpts};
+use cl8y_research::embed::{Embedder, HashingEmbedder};
+use cl8y_research::pipeline::{run_week, WeekOpts};
 use cl8y_research::replicate::{FixturePredictor, HttpPredictor, Predictor};
-use cl8y_research::store::MemoryStore;
+use cl8y_research::store::{DocumentStore, MemoryStore, SourceRecord};
 use clap::{Parser, Subcommand};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -47,8 +51,19 @@ enum Cmd {
         query: String,
         #[arg(long, default_value = "fixtures/happy-week")]
         fixtures: PathBuf,
+        #[arg(long)]
+        from: Option<PathBuf>,
         #[arg(long, default_value_t = 8)]
         k: usize,
+    },
+    /// Competitor fee/liquidity watch → raw notes inbox (not a week pipeline run).
+    Watch {
+        #[arg(long, default_value = "fixtures/competitor-watch")]
+        fixtures: PathBuf,
+        #[arg(long, default_value = "runs/watch/latest")]
+        out: PathBuf,
+        #[arg(long)]
+        live_watch: bool,
     },
     /// Recover a Replicate prediction by id (no second create).
     Fetch { id: String },
@@ -106,19 +121,22 @@ fn run() -> cl8y_research::Result<()> {
             Ok(())
         }
         Cmd::Ingest { fixtures } => {
-            let bundle = load_fixture_bundle(&fixtures)?;
-            let collection =
-                cl8y_research::collect::collect_from_fixture(&cfg, &bundle, chrono::Utc::now())?;
+            let sources = load_search_sources(&fixtures, None)?;
             let mut store = MemoryStore::new();
-            let n = store.ingest_sources(&collection.sources, &HashingEmbedder)?;
+            let n = store.ingest_sources(&sources, &HashingEmbedder)?;
             println!("ingested {n} documents (in-memory). Use `search` to query.");
             Ok(())
         }
-        Cmd::Search { query, fixtures, k } => {
-            let bundle = load_fixture_bundle(&fixtures)?;
-            let collection =
-                cl8y_research::collect::collect_from_fixture(&cfg, &bundle, chrono::Utc::now())?;
-            let hits = search_collection(&collection, &query, k)?;
+        Cmd::Search {
+            query,
+            fixtures,
+            from,
+            k,
+        } => {
+            let sources = load_search_sources(&fixtures, from.as_deref())?;
+            let mut store = MemoryStore::new();
+            store.ingest_sources(&sources, &HashingEmbedder)?;
+            let hits = store.search(&HashingEmbedder.embed(&query), k)?;
             for h in hits {
                 println!(
                     "{:.3} {} {}\n  {}\n",
@@ -128,6 +146,29 @@ fn run() -> cl8y_research::Result<()> {
                     h.citation
                 );
             }
+            Ok(())
+        }
+        Cmd::Watch {
+            fixtures,
+            out,
+            live_watch,
+        } => {
+            let now = chrono::Utc::now();
+            let bundle = load_fixture_bundle(&fixtures).ok();
+            let fx = bundle
+                .map(|b| b.competitor_watch)
+                .filter(|v| !v.is_empty())
+                .unwrap_or_else(|| load_fixture_competitor_pages(&fixtures).unwrap_or_default());
+            let watch = collect_competitor_watch_default(&fx, live_watch, now)?;
+            write_watch_artifacts(&out, &watch)?;
+            let mut store = MemoryStore::new();
+            let n = store.ingest_sources(&watch.sources, &HashingEmbedder)?;
+            println!(
+                "watch: {} notes, {} gaps → {}",
+                n,
+                watch.gaps.len(),
+                out.display()
+            );
             Ok(())
         }
         Cmd::Fetch { id } => {
@@ -171,6 +212,40 @@ fn load_fixture_predictor(dir: &std::path::Path) -> cl8y_research::Result<Fixtur
         HashMap::new()
     };
     Ok(FixturePredictor::new(map))
+}
+
+fn load_search_sources(
+    fixtures: &std::path::Path,
+    from_watch: Option<&std::path::Path>,
+) -> cl8y_research::Result<Vec<SourceRecord>> {
+    let mut sources = Vec::new();
+    if let Some(dir) = from_watch {
+        let notes = dir.join("notes.json");
+        if notes.exists() {
+            sources.extend(load_watch_notes(&notes)?);
+        }
+    }
+    if fixtures.join("sources.json").exists() {
+        let bundle = load_fixture_bundle(fixtures)?;
+        if !bundle.competitor_watch.is_empty() {
+            let now = chrono::Utc::now();
+            let watch = collect_competitor_watch_default(&bundle.competitor_watch, false, now)?;
+            sources.extend(watch.sources);
+        } else if fixtures.to_string_lossy().contains("competitor-watch") {
+            let fx = load_fixture_competitor_pages(fixtures)?;
+            let now = chrono::Utc::now();
+            let watch = collect_competitor_watch_default(&fx, false, now)?;
+            sources.extend(watch.sources);
+        } else {
+            let collection = cl8y_research::collect::collect_from_fixture(
+                &Config::from_env()?,
+                &bundle,
+                chrono::Utc::now(),
+            )?;
+            sources.extend(collection.sources);
+        }
+    }
+    Ok(sources)
 }
 
 fn load_existing_slugs(dir: &std::path::Path) -> Vec<String> {
