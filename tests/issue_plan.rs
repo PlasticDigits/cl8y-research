@@ -81,6 +81,7 @@ fn base_bundle() -> FixtureBundle {
             opening: "CL8Y has grown into a set of connected infrastructure".into(),
         }],
         ssrf_url: None,
+        competitor_watch: vec![],
     }
 }
 

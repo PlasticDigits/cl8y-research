@@ -1,4 +1,4 @@
-.PHONY: test retest week dry fmt clippy
+.PHONY: test retest week dry watch fmt clippy
 
 test:
 	cargo test --all-targets
@@ -16,3 +16,6 @@ week:
 
 dry:
 	cargo run -- week --fixtures fixtures/happy-week --out runs/dry --dry-run
+
+watch:
+	cargo run -- watch --fixtures fixtures/competitor-watch --out runs/watch/latest

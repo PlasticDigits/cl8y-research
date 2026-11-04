@@ -6,3 +6,9 @@ steps:
     image: rust:1.88-bookworm
     commands:
       - cargo test --workspace --locked
+  - name: no-catchall-codeowners
+    image: alpine:3.20
+    commands:
+      - test ! -f CODEOWNERS
+      - test ! -f docs/CODEOWNERS
+      - test ! -f .forgejo/CODEOWNERS

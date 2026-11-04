@@ -1,0 +1,27 @@
+{
+  "competitor_watch": [
+    {
+      "id": "defillama-terraswap",
+      "status": 200,
+      "body": {
+        "name": "Terraswap",
+        "fee_bps": 30,
+        "currentChainTvls": { "Terra": 1250000.5 }
+      }
+    },
+    {
+      "id": "defillama-terraport",
+      "status": 200,
+      "body": {
+        "name": "Terraport",
+        "fee_bps": 25,
+        "currentChainTvls": null
+      }
+    },
+    {
+      "id": "defillama-astroport-classic",
+      "status": 503,
+      "body": null
+    }
+  ]
+}

@@ -2,7 +2,8 @@
 
 use crate::error::{Error, Result};
 use crate::invariants::{
-    CANONICAL_ADDRESSES, INDEXER_HOSTS, POST_HREF_HOSTS, REPO_GIT_HOSTS, REPO_ORGS,
+    CANONICAL_ADDRESSES, COMPETITOR_WATCH_FORBIDDEN_HOSTS, COMPETITOR_WATCH_PAGES, INDEXER_HOSTS,
+    POST_HREF_HOSTS, REPO_GIT_HOSTS, REPO_ORGS,
 };
 use url::Url;
 
@@ -118,6 +119,47 @@ pub fn check_post_href(raw: &str) -> Result<Url> {
 
 pub fn check_indexer_url(raw: &str) -> Result<Url> {
     check_fetch_url(raw, INDEXER_HOSTS)
+}
+
+/// Exact URL must match a committed competitor-watch page (not host-wide allow).
+pub fn check_competitor_watch_url(raw: &str) -> Result<Url> {
+    let url = parse_https_url(raw)?;
+    let host = host_of(&url)?;
+    if host_allowed(&host, COMPETITOR_WATCH_FORBIDDEN_HOSTS) {
+        return Err(Error::Allowlist(format!(
+            "competitor watch forbids host {host}"
+        )));
+    }
+    reject_open_redirect(&url)?;
+    let normalized = normalize_competitor_url(&url);
+    if !COMPETITOR_WATCH_PAGES
+        .iter()
+        .any(|p| normalize_competitor_url_string(p.url) == normalized)
+    {
+        return Err(Error::Allowlist(format!(
+            "url {raw} not in COMPETITOR_WATCH_PAGES"
+        )));
+    }
+    Ok(url)
+}
+
+fn normalize_competitor_url_string(raw: &str) -> String {
+    let url = Url::parse(raw).expect("committed competitor URLs must parse");
+    normalize_competitor_url(&url)
+}
+
+fn normalize_competitor_url(url: &Url) -> String {
+    let host = url.host_str().unwrap_or("").to_ascii_lowercase();
+    let path = url.path();
+    let path = if path.is_empty() { "/" } else { path };
+    let mut out = format!("https://{host}{path}");
+    if let Some(q) = url.query() {
+        if !q.is_empty() {
+            out.push('?');
+            out.push_str(q);
+        }
+    }
+    out
 }
 
 pub fn check_repo_remote(host_path: &str) -> Result<(String, String, String)> {
